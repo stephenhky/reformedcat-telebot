@@ -1,0 +1,4 @@
+pyTelegramBotAPI
+python-dotenv
+reformedcatutils>=0.0.4
+requests

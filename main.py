@@ -1,0 +1,129 @@
+
+import logging
+import os
+import re
+import asyncio
+
+from dotenv import load_dotenv
+import telebot
+from reformedcatutils.biblebooks import books2idx, otbookdict, ntbookdict
+
+from utils.retrieval import retrieve_single_verse, retrieve_verses
+
+
+logging.basicConfig(level=logging.INFO)
+
+load_dotenv()
+
+# Telebot API Key
+api_key = os.getenv('APIKEY')
+bot = telebot.TeleBot(api_key)
+
+# Retrieval URL
+retrieval_api_url = os.getenv('RETRIEVALAPI')
+
+
+@bot.message_handler(commands=['index'])
+def show_books_index(message):
+    logging.info(message)
+    returntext = '\n'.join(
+        '{}: {}'.format(key, bookname) for key, bookname in otbookdict.items()
+    ) + '\n' + \
+    '\n'.join(
+        '{}: {}'.format(key, bookname) for key, bookname in ntbookdict.items()
+    )
+    bot.reply_to(message, returntext)
+
+
+@bot.message_handler(commands=['otindex'])
+def show_otbooks_index(message):
+    logging.info(message)
+    returntext = '\n'.join(
+        '{}: {}'.format(key, bookname) for key, bookname in otbookdict.items()
+    )
+    bot.reply_to(message, returntext)
+
+
+@bot.message_handler(commands=['ntindex'])
+def show_ntbooks_index(message):
+    logging.info(message)
+    returntext = '\n'.join(
+        '{}: {}'.format(key, bookname) for key, bookname in ntbookdict.items()
+    )
+    bot.reply_to(message, returntext)
+
+
+@bot.message_handler(commands=['greet'])
+def greet(message):
+    logging.info(message)
+    bot.reply_to(message, 'Hey, how is it going?')
+
+
+@bot.message_handler(regexp='[Hh]ello*')
+def hello(message):
+    logging.info(message)
+    bot.send_message(message.chat.id, "Hello!")
+
+
+@bot.message_handler(regexp='[Bb]ye[!]?')
+def sayonara(message):
+    logging.info(message)
+    bot.send_message(message.chat.id, "Have a nice day!")
+
+
+@bot.message_handler(commands=['rb'])
+def handling_stockcorrelation_message(message):
+    logging.info(message)
+    stringlists = re.sub('\s+', ' ', message.text).split(' ')[1:]
+
+    book = stringlists[0]
+    if not (book in books2idx):
+        bot.reply_to(message, 'Unknown book abbreviation: {}'.format(book))
+
+    startchapter = stringlists[1]
+    startverse = stringlists[2]
+    try:
+        startchapter = int(startchapter)
+        startverse = int(startverse)
+    except ValueError:
+        bot.reply_to(message, 'Invalid chapter or verse: {}:{}'.format(startchapter, startverse))
+
+    if len(stringlists) >= 5:
+        endchapter = stringlists[3]
+        endverse = stringlists[4]
+        try:
+            endchapter = int(endchapter)
+            endverse = int(endverse)
+        except ValueError:
+            bot.reply_to(message, 'Invalid chapter or verse: {}:{}'.format(endchapter, endverse))
+        result = asyncio.run(
+            retrieve_verses(
+                retrieval_api_url,
+                book,
+                startchapter,
+                startverse,
+                endchapter,
+                endverse,
+                'ESVBible',
+                'EnglishTraditional'
+            )
+        )
+    else:
+        result = asyncio.run(
+            retrieve_single_verse(
+                retrieval_api_url,
+                book,
+                startchapter,
+                startverse,
+                'ESVBible',
+                'EnglishTraditional'
+            )
+        )
+
+    returntext = '{} ({} {})'.format(result['text'], result['bookname'], result['verseref'])
+    bot.reply_to(message, returntext)
+
+
+
+bot.polling()
+
