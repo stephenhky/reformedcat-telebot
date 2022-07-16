@@ -23,6 +23,22 @@ bot = telebot.TeleBot(api_key)
 retrieval_api_url = os.getenv('RETRIEVALAPI')
 
 
+@bot.message_handler(commands=['help'])
+def help(message):
+    logging.info(message)
+
+    returntext = '\n'.join(
+        [
+            '/greet : say Hello!',
+            '/index : abbreviation of all books in the Bible',
+            '/otindex : abbreviation of all books in the Old Testament',
+            '/ntindex : abbreviation of all books in the New Testament',
+            '/rb : display verses with given book, start chapter, start verse, (end chapter, end verse)'
+        ]
+    )
+    bot.send_message(message.chat.id, returntext)
+
+
 @bot.message_handler(commands=['index'])
 def show_books_index(message):
     logging.info(message)
