@@ -140,6 +140,13 @@ def handling_stockcorrelation_message(message):
     bot.reply_to(message, returntext)
 
 
+def lambda_handler(event, context):
+    bot.polling()
+    return {
+        'statusCode': 200,
+        'body': 'Lambda executed'
+    }
 
-bot.polling()
 
+if __name__ == '__main__':
+    bot.polling()
