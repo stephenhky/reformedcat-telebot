@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import asyncio
+import json
 
 from dotenv import load_dotenv
 import telebot
@@ -17,7 +18,7 @@ load_dotenv()
 
 # Telebot API Key
 api_key = os.getenv('APIKEY')
-bot = telebot.TeleBot(api_key)
+bot = telebot.TeleBot(api_key, threaded=False)
 
 # Retrieval URL
 retrieval_api_url = os.getenv('RETRIEVALAPI')
@@ -141,12 +142,27 @@ def handling_stockcorrelation_message(message):
 
 
 def lambda_handler(event, context):
-    bot.polling()
-    return {
-        'statusCode': 200,
-        'body': 'Lambda executed'
-    }
+    message = json.loads(event['body'])
+    logging.info(message)
+    print(message)
+    if message.get('polling', False):
+        bot.polling()
+        return {
+            'statusCode': 200,
+            'body': 'Lambda executed with polling'
+        }
+    else:
+        update = telebot.types.Update.de_json(message)
+        logging.info(update)
+        print(update)
+        bot.process_new_messages([update.message])
+        return {
+            'statusCode': 200,
+            'body': 'Lambda executed as a webhook'
+        }
 
 
 if __name__ == '__main__':
     bot.polling()
+
+# Reference: how to set up webhook: https://aws.plainenglish.io/develop-your-telegram-chatbot-with-aws-api-gateway-dynamodb-lambda-functions-410dcb1fb58a
