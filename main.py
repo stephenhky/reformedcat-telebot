@@ -96,6 +96,7 @@ def handling_stockcorrelation_message(message):
     book = stringlists[0]
     if not (book in books2idx):
         bot.reply_to(message, 'Unknown book abbreviation: {}'.format(book))
+        return
 
     startchapter = stringlists[1]
     startverse = stringlists[2]
@@ -104,6 +105,7 @@ def handling_stockcorrelation_message(message):
         startverse = int(startverse)
     except ValueError:
         bot.reply_to(message, 'Invalid chapter or verse: {}:{}'.format(startchapter, startverse))
+        return
 
     if len(stringlists) >= 5:
         endchapter = stringlists[3]
@@ -113,6 +115,7 @@ def handling_stockcorrelation_message(message):
             endverse = int(endverse)
         except ValueError:
             bot.reply_to(message, 'Invalid chapter or verse: {}:{}'.format(endchapter, endverse))
+            return
         result = asyncio.run(
             retrieve_verses(
                 retrieval_api_url,
