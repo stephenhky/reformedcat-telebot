@@ -38,6 +38,7 @@ def help(message):
         ]
     )
     bot.send_message(message.chat.id, returntext)
+    return {'message': returntext}
 
 
 @bot.message_handler(commands=['index'])
@@ -50,6 +51,7 @@ def show_books_index(message):
         '{}: {}'.format(key, bookname) for key, bookname in ntbookdict.items()
     )
     bot.reply_to(message, returntext)
+    return {'message': returntext}
 
 
 @bot.message_handler(commands=['otindex'])
@@ -59,6 +61,7 @@ def show_otbooks_index(message):
         '{}: {}'.format(key, bookname) for key, bookname in otbookdict.items()
     )
     bot.reply_to(message, returntext)
+    return {'message': returntext}
 
 
 @bot.message_handler(commands=['ntindex'])
@@ -68,24 +71,28 @@ def show_ntbooks_index(message):
         '{}: {}'.format(key, bookname) for key, bookname in ntbookdict.items()
     )
     bot.reply_to(message, returntext)
+    return {'message': returntext}
 
 
 @bot.message_handler(commands=['greet'])
 def greet(message):
     logging.info(message)
     bot.reply_to(message, 'Hey, how is it going?')
+    return {'message': 'Hey, how is it going?'}
 
 
 @bot.message_handler(regexp='[Hh]ello*')
 def hello(message):
     logging.info(message)
     bot.send_message(message.chat.id, "Hello!")
+    return {'message': 'Hello!'}
 
 
 @bot.message_handler(regexp='[Bb]ye[!]?')
 def sayonara(message):
     logging.info(message)
     bot.send_message(message.chat.id, "Have a nice day!")
+    return {'message': 'Have a nice day!'}
 
 
 @bot.message_handler(commands=['rb'])
@@ -93,10 +100,14 @@ def handling_stockcorrelation_message(message):
     logging.info(message)
     stringlists = re.sub('\s+', ' ', message.text).split(' ')[1:]
 
+    if len(stringlists) <= 0:
+        bot.reply_to(message, 'No argument input.')
+        return {'error': 'No arguments input.'}
+
     book = stringlists[0]
     if not (book in books2idx):
         bot.reply_to(message, 'Unknown book abbreviation: {}'.format(book))
-        return
+        return {'error': 'Unknown book abbreviation: {}'.format(book)}
 
     startchapter = stringlists[1]
     startverse = stringlists[2]
@@ -105,7 +116,7 @@ def handling_stockcorrelation_message(message):
         startverse = int(startverse)
     except ValueError:
         bot.reply_to(message, 'Invalid chapter or verse: {}:{}'.format(startchapter, startverse))
-        return
+        return {'error': 'Invalid chapter or verse: {}:{}'.format(startchapter, startverse)}
 
     if len(stringlists) >= 5:
         endchapter = stringlists[3]
@@ -115,7 +126,7 @@ def handling_stockcorrelation_message(message):
             endverse = int(endverse)
         except ValueError:
             bot.reply_to(message, 'Invalid chapter or verse: {}:{}'.format(endchapter, endverse))
-            return
+            return {'error': 'Invalid chapter or verse: {}:{}'.format(endchapter, endverse)}
         result = asyncio.run(
             retrieve_verses(
                 retrieval_api_url,
@@ -142,6 +153,7 @@ def handling_stockcorrelation_message(message):
 
     returntext = '{} ({} {})'.format(result['text'], result['bookname'], result['verseref'])
     bot.reply_to(message, returntext)
+    return {'message': returntext}
 
 
 def lambda_handler(event, context):
